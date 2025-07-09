@@ -67,7 +67,7 @@ effect(() => {
   console.log(`Count: ${state.value.count}, Double: ${state.value.count * 2}`);
 });
 
-state.count = 5; // Logs: "Count: 5, Double: 10"
+state.value.count = 5; // Logs: "Count: 5, Double: 10"
 ```
 
 2. **Create a store**:
