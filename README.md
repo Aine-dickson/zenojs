@@ -74,22 +74,24 @@ state.count = 5; // Logs: "Count: 5, Double: 10"
 ```javascript
 import { defineStore } from './store.js';
 
-const counterStore = defineStore('counter', {
-  count: 0,
-  increment() {
-    this.count++;
+const counterStore = defineStore('counter', ()=>{
+  let count = 0;
+  let increment = () => {
+    count++;
   },
-  decrement() {
-    this.count--;
+  let decrement = () => {
+    count--;
   }
-});
+
+  return { count }
+}, persist: true);
 ```
 
 3. **Set up routing**:
 ```javascript
-import { createRouter } from './router.js';
+import { ZenoRouter } from './router.js';
 
-const router = createRouter({
+const router = new ZenoRouter({
   '/': () => import('./pages/HomePage.js'),
   '/about': () => import('./pages/AboutPage.js'),
   '/dashboard': {
@@ -98,7 +100,7 @@ const router = createRouter({
   }
 });
 
-router.start();
+export default router;
 ```
 
 4. **Create components**:
