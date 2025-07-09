@@ -1,5 +1,3 @@
-// zeno/router.js
-
 export class ZenoRouter {
     constructor(routes = {}, options = {}) {
         this.routes = routes;
@@ -10,7 +8,7 @@ export class ZenoRouter {
             return div;
         });
         this.onGuardFail = options.onGuardFail || (() => {
-            location.hash = '/login';
+            this.push('/login');
         });
 
         this._bindEvents();
@@ -23,31 +21,94 @@ export class ZenoRouter {
     }
 
     get currentPath() {
-        return location.hash.replace(/^#/, '') || '/';
+        return location.hash.slice(1).split('?')[0] || '/';
     }
 
-    renderRoute() {
+    get currentQuery() {
+        const search = location.hash.split('?')[1];
+        const query = {};
+        if (!search) return query;
+
+        for (const pair of search.split('&')) {
+            const [key, value] = pair.split('=');
+            query[decodeURIComponent(key)] = decodeURIComponent(value || '');
+        }
+        return query;
+    }
+
+    matchRoute(path) {
+        for (const [pattern, config] of Object.entries(this.routes)) {
+        const paramNames = [];
+        const regex = new RegExp(
+                '^' + pattern.replace(/:[^/]+/g, match => {
+                paramNames.push(match.slice(1));
+                return '([^/]+)';
+            }) + '$'
+        );
+
+        const match = path.match(regex);
+        if (match) {
+            const params = {};
+            paramNames.forEach((name, i) => {
+                params[name] = decodeURIComponent(match[i + 1]);
+            });
+
+            return { route: config, params };
+        }
+        }
+        return null;
+    }
+
+    async renderRoute() {
         const target = document.querySelector(this.viewSelector);
         if (!target) return console.warn(`ZenoRouter: Target ${this.viewSelector} not found`);
 
         target.innerHTML = '';
 
-        const route = this.routes[this.currentPath];
-
-        if (!route) {
+        const match = this.matchRoute(this.currentPath);
+        if (!match) {
             target.appendChild(this.notFound());
             return;
         }
 
-        // Route can be a component directly or an object with guard
-        const component = typeof route === 'function' ? route : route.component;
+        const { route, params } = match;
+        const query = this.currentQuery;
+
+        const componentFn = typeof route === 'function' ? route : route.component;
         const guard = typeof route === 'function' ? null : route.guard;
 
-        if (guard && !guard()) {
-            this.onGuardFail(this.currentPath); // Can be customized
+        // Guard check before anything else
+        if (guard && !guard(params, query)) {
+            this.onGuardFail(this.currentPath);
             return;
         }
 
-        target.appendChild(component());
+        // Load component
+        let result = await componentFn(); // call the function (may return Promise or Node)
+                                          // this allows for dynamic imports
+
+        if (result instanceof Node) {
+            target.appendChild(result);
+            return;
+        }
+
+        if (result?.default) {
+            result = result.default;
+        }
+
+        // Now result should be a function returning DOM Node
+        const el = result({ params, query });
+
+        if (el instanceof Node) {
+            target.appendChild(el);
+        } else {
+            console.warn('ZenoRouter: Component did not return a valid DOM Node');
+        }
+    }
+
+
+    // Programmatic navigation
+    push(path) {
+        location.hash = path.startsWith('#') ? path : `#${path}`;
     }
 }
