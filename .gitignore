@@ -1,0 +1,22 @@
+# ZenoJS - Only include core framework files and showcase components
+
+# Ignore specific application files
+app.html
+app.js
+style.css
+
+# Ignore all pages
+pages/
+
+# Ignore specific stores except videoStore.js
+stores/appStore.js
+
+# Ignore specific components except Navigation.js
+components/AnalyticsTab.js
+components/LibraryTab.js
+components/LoginModal.js
+components/UploadTab.js
+
+# Ignore pages
+pages/DashboardPage.js
+pages/HomePage.js
