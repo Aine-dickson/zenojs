@@ -8,7 +8,12 @@ const renderer = ({
     events = {},
 }) => {
     if (!target || !renderOptions.length) return console.warn('renderer: Target or renderOptions missing');
+    if (!(target instanceof HTMLElement)) {
+        console.warn('renderer: Invalid target', target);
+        return;
+    }
 
+    console.log(target)
     const container = document.createElement('div');
 
     const maxIndex = Math.min(conditions.length, renderOptions.length - 1);
@@ -24,7 +29,13 @@ const renderer = ({
 
     // Fallback to "else" branch if none matched
     if (selectedIndex === -1) {
-        selectedIndex = renderOptions.length === 1 ? (conditions[0] ? 0 : -1) : renderOptions.length - 1;
+        if (conditions.length === 0) {
+            selectedIndex = 0; // render the first option when no conditions are provided
+        } else if (renderOptions.length === 1) {
+            selectedIndex = conditions[0] ? 0 : -1;
+        } else {
+            selectedIndex = renderOptions.length - 1;
+        }
     }
 
     if (selectedIndex !== -1) {
