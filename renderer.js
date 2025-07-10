@@ -13,7 +13,6 @@ const renderer = ({
         return;
     }
 
-    console.log(target)
     const container = document.createElement('div');
 
     const maxIndex = Math.min(conditions.length, renderOptions.length - 1);
@@ -46,10 +45,16 @@ const renderer = ({
         target.replaceChildren();
     }
 
-    // Attach event listeners
-    Object.entries(events).forEach(([selector, { eventType = 'click', handler }]) => {
+    if (typeof events != 'object') {
+        console.warn('renderer: Invalid events object', events);
+        return selectedIndex
+    }
+
+    Object.entries(events).forEach(([selector, eventDefs]) => {
         const elements = target.querySelectorAll(selector);
-        elements.forEach(el => el.addEventListener(eventType, handler));
+        (Array.isArray(eventDefs) ? eventDefs : [eventDefs]).forEach(({ eventType, handler }) => {
+            elements.forEach(el => el.addEventListener(eventType, handler));
+        });
     });
 
     return selectedIndex;
