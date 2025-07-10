@@ -8,6 +8,10 @@ const renderer = ({
     events = {},
 }) => {
     if (!target || !renderOptions.length) return console.warn('renderer: Target or renderOptions missing');
+    if (!(target instanceof HTMLElement)) {
+        console.warn('renderer: Invalid target', target);
+        return;
+    }
 
     const container = document.createElement('div');
 
@@ -24,7 +28,13 @@ const renderer = ({
 
     // Fallback to "else" branch if none matched
     if (selectedIndex === -1) {
-        selectedIndex = renderOptions.length === 1 ? (conditions[0] ? 0 : -1) : renderOptions.length - 1;
+        if (conditions.length === 0) {
+            selectedIndex = 0; // render the first option when no conditions are provided
+        } else if (renderOptions.length === 1) {
+            selectedIndex = conditions[0] ? 0 : -1;
+        } else {
+            selectedIndex = renderOptions.length - 1;
+        }
     }
 
     if (selectedIndex !== -1) {
@@ -35,10 +45,16 @@ const renderer = ({
         target.replaceChildren();
     }
 
-    // Attach event listeners
-    Object.entries(events).forEach(([selector, { eventType = 'click', handler }]) => {
+    if (typeof events != 'object') {
+        console.warn('renderer: Invalid events object', events);
+        return selectedIndex
+    }
+
+    Object.entries(events).forEach(([selector, eventDefs]) => {
         const elements = target.querySelectorAll(selector);
-        elements.forEach(el => el.addEventListener(eventType, handler));
+        (Array.isArray(eventDefs) ? eventDefs : [eventDefs]).forEach(({ eventType, handler }) => {
+            elements.forEach(el => el.addEventListener(eventType, handler));
+        });
     });
 
     return selectedIndex;
